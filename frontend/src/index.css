@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+/* ---- Warsha design tokens (automotive / service-manual identity) ---- */
+@theme {
+  --color-canvas: #f1f3f5;
+  --color-surface: #ffffff;
+  --color-surface-2: #f7f8fa;
+  --color-ink: #191d21;
+  --color-muted: #5a636d;
+  --color-faint: #8a929b;
+  --color-line: #e1e5ea;
+  --color-line-strong: #cfd5db;
+  --color-accent: #e07b00;
+  --color-accent-soft: #fcebd4;
+  --color-accent-ink: #7a4300;
+  --color-petrol: #223641;
+  --color-petrol-2: #2b414d;
+  --color-petrol-ink: #eaf0f2;
+  --color-petrol-faint: #9db1bb;
+  --color-good: #2c7a54;
+  --color-bad: #b4382e;
+
+  --font-sans: "Cairo", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- Dark theme: redefine the semantic tokens; every utility that reads a
+   --color-* var (bg-surface, text-ink, border-line, …) swaps automatically. ---- */
+:root.dark {
+  color-scheme: dark;
+  --color-canvas: #131619;
+  --color-surface: #1b1f23;
+  --color-surface-2: #21262b;
+  --color-ink: #e7eaed;
+  --color-muted: #9ba4ae;
+  --color-faint: #6b7580;
+  --color-line: #2c3238;
+  --color-line-strong: #3a424a;
+  --color-accent: #f0930f;
+  --color-accent-soft: #3a2a12;
+  --color-accent-ink: #f5a937;
+  --color-petrol: #16232c;
+  --color-petrol-2: #22333d;
+  --color-petrol-ink: #eaf0f2;
+  --color-petrol-faint: #8ba0aa;
+  --color-good: #48a778;
+  --color-bad: #d9594c;
+}
+
+/* Tabular numerals for money/counters */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Indeterminate top loading bar (shown while any request is in flight) */
+@keyframes warsha-bar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+.warsha-bar {
+  animation: warsha-bar 1.1s ease-in-out infinite;
+}
+
+/* Skeleton shimmer */
+@keyframes warsha-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+.warsha-skeleton {
+  background: var(--color-surface-2);
+  border-radius: 8px;
+  animation: warsha-pulse 1.3s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .warsha-bar, .warsha-skeleton { animation: none; }
+}

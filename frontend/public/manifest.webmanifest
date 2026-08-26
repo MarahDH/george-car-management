@@ -1,0 +1,20 @@
+{
+  "name": "GEORGE — إدارة صيانة السيارات",
+  "short_name": "GEORGE",
+  "description": "نظام إدارة مركز صيانة السيارات",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f1216",
+  "theme_color": "#0f1216",
+  "icons": [
+    {
+      "src": "/george-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
