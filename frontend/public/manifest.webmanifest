@@ -11,10 +11,10 @@
   "theme_color": "#0f1216",
   "icons": [
     {
-      "src": "/george-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "/george-logo.png",
+      "sizes": "150x150",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }

@@ -3,7 +3,6 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useIsFetching } from '@tanstack/react-query'
 import { useAuth } from '../auth/AuthContext'
 import Icon, { type IconName } from './Icon'
-import Logo from './Logo'
 import ThemeToggle from './ThemeToggle'
 
 interface NavItem {
@@ -54,7 +53,7 @@ export default function AppLayout() {
       {/* Sidebar (right in RTL) */}
       <aside className={`fixed inset-y-0 right-0 z-40 flex w-64 flex-col bg-petrol text-petrol-ink transition-transform md:static md:translate-x-0 ${open ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}`}>
         <div className="flex h-16 items-center gap-3 border-b border-white/10 px-5">
-          <Logo className="h-9 w-9" id="side" />
+          <img src="/george-logo.png" alt="GEORGE" className="h-10 w-10 rounded-lg" />
           <div className="leading-tight">
             <div className="text-lg font-extrabold tracking-[0.15em] text-white">GEORGE</div>
             <div className="text-xs text-petrol-faint">إدارة صيانة السيارات</div>

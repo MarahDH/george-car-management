@@ -2,7 +2,6 @@ import { useState, type FormEvent } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { AxiosError } from 'axios'
 import { useAuth } from '../auth/AuthContext'
-import Logo from '../components/Logo'
 
 const inputClass =
   'w-full rounded-lg border border-line bg-surface-2 px-3 py-2.5 text-ink outline-none transition-colors focus:border-[#2a7de1] focus:ring-2 focus:ring-[#2a7de1]/25'
@@ -46,7 +45,7 @@ export default function LoginPage() {
           <div className="absolute inset-0 opacity-[0.04] [background-image:linear-gradient(#fff_1px,transparent_1px),linear-gradient(90deg,#fff_1px,transparent_1px)] [background-size:44px_44px]" />
         </div>
         <div className="relative flex flex-col items-center text-center">
-          <Logo className="h-40 w-40 drop-shadow-[0_10px_35px_rgba(30,95,191,0.4)]" id="brand" />
+          <img src="/george-logo.png" alt="GEORGE" className="h-40 w-40 rounded-3xl drop-shadow-[0_10px_35px_rgba(30,95,191,0.4)]" />
           <h1 className="mt-6 bg-gradient-to-b from-white via-slate-300 to-slate-500 bg-clip-text text-6xl font-extrabold tracking-[0.22em] text-transparent">GEORGE</h1>
           <p className="mt-3 text-sm tracking-[0.25em] text-slate-400">إدارة مركز صيانة السيارات</p>
           <div className="mt-6 h-1 w-28 rounded-full bg-gradient-to-r from-transparent via-[#2a7de1] to-transparent" />
@@ -57,7 +56,7 @@ export default function LoginPage() {
       <div className="flex w-full flex-col items-center justify-center bg-canvas p-6 md:w-[460px] md:shadow-2xl">
         <div className="w-full max-w-sm">
           <div className="mb-8 flex flex-col items-center md:hidden">
-            <Logo className="h-16 w-16" id="mobile" />
+            <img src="/george-logo.png" alt="GEORGE" className="h-16 w-16 rounded-2xl" />
             <h1 className="mt-3 text-2xl font-extrabold tracking-[0.22em] text-ink">GEORGE</h1>
           </div>
 
