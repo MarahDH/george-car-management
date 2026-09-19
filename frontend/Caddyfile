@@ -1,0 +1,9 @@
+# Static SPA server with client-side routing fallback.
+# Railway injects $PORT; Caddy listens on it and serves index.html for any
+# unknown path so React Router routes (/login, /customers, ...) resolve.
+:{$PORT:80} {
+	root * /usr/share/caddy
+	encode gzip zstd
+	try_files {path} /index.html
+	file_server
+}
