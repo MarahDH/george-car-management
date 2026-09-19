@@ -103,8 +103,6 @@ export default function LoginPage() {
             >
               {busy ? 'جارٍ الدخول…' : 'دخول'}
             </button>
-
-            <p className="text-center text-xs text-faint">بيانات التجربة: admin@warsha.test / password</p>
           </form>
         </div>
       </div>
