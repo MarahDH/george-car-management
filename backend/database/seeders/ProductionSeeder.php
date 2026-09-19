@@ -15,21 +15,38 @@ use Illuminate\Support\Facades\Hash;
  *   ADMIN_PASSWORD  (default: ChangeMe123! — set a strong value on Railway)
  *   ADMIN_NAME      (default: مدير الورشة)
  *
- * Uses firstOrCreate, so it is safe to run on every deploy: the admin is
- * created once and an in-app password change is never overwritten.
+ * The admin is created once. It is NEVER silently overwritten on later deploys,
+ * so an in-app password change is preserved. To force the password back to
+ * ADMIN_PASSWORD (e.g. you lost it), set ADMIN_RESET_PASSWORD=true on Railway,
+ * redeploy, log in, then remove that variable.
  */
 class ProductionSeeder extends Seeder
 {
     public function run(): void
     {
-        User::firstOrCreate(
-            ['email' => env('ADMIN_EMAIL', 'admin@george.local')],
-            [
+        $email = env('ADMIN_EMAIL', 'admin@george.local');
+        $password = env('ADMIN_PASSWORD', 'ChangeMe123!');
+        $reset = filter_var(env('ADMIN_RESET_PASSWORD', false), FILTER_VALIDATE_BOOL);
+
+        $user = User::where('email', $email)->first();
+
+        if (! $user) {
+            User::create([
                 'name' => env('ADMIN_NAME', 'مدير الورشة'),
-                'password' => Hash::make(env('ADMIN_PASSWORD', 'ChangeMe123!')),
+                'email' => $email,
+                'password' => Hash::make($password),
                 'role' => User::ROLE_ADMIN,
                 'is_active' => true,
-            ],
-        );
+            ]);
+
+            return;
+        }
+
+        if ($reset) {
+            $user->update([
+                'password' => Hash::make($password),
+                'is_active' => true,
+            ]);
+        }
     }
 }
