@@ -1,32 +1,21 @@
-// Minimal service worker: cache same-origin GET assets so the app shell keeps
-// working when the connection drops. API calls (a different origin) are never
-// cached, so data is always fresh when online.
-const CACHE = 'warsha-v1'
-
-self.addEventListener('install', () => {
-  self.skipWaiting()
-})
+// Kill-switch service worker.
+//
+// A previous build shipped a caching service worker that could leave clients
+// stuck on a stale app shell. This replacement caches nothing: on activation it
+// clears every cache, unregisters itself, and reloads any pages it controls so
+// they load fresh directly from the network. Browsers check sw.js for updates
+// on navigation (bypassing the HTTP cache), so stuck clients pick this up and
+// self-heal on their next visit. The app no longer registers a service worker.
+self.addEventListener('install', () => self.skipWaiting())
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim())
-})
-
-self.addEventListener('fetch', (event) => {
-  const req = event.request
-  if (req.method !== 'GET') return
-
-  const url = new URL(req.url)
-  if (url.origin !== self.location.origin) return
-
-  event.respondWith(
-    fetch(req)
-      .then((res) => {
-        const copy = res.clone()
-        caches.open(CACHE).then((cache) => cache.put(req, copy))
-        return res
-      })
-      .catch(() =>
-        caches.match(req).then((cached) => cached || caches.match('/index.html')),
-      ),
+  event.waitUntil(
+    (async () => {
+      const keys = await caches.keys()
+      await Promise.all(keys.map((k) => caches.delete(k)))
+      await self.registration.unregister()
+      const clients = await self.clients.matchAll({ type: 'window' })
+      for (const client of clients) client.navigate(client.url)
+    })(),
   )
 })

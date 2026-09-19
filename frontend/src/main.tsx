@@ -36,10 +36,19 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 )
 
-// Register the PWA service worker only in production builds (avoids interfering
-// with Vite's dev HMR).
-if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {})
-  })
+// The app no longer uses a service worker (offline caching caused stale builds
+// to stick). Proactively unregister any SW a previous build installed and clear
+// its caches, so nobody is left on an old cached app shell. The kill-switch
+// public/sw.js also does this for clients that never load this bundle.
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker
+    .getRegistrations()
+    .then((regs) => regs.forEach((r) => r.unregister()))
+    .catch(() => {})
+  if (typeof caches !== 'undefined') {
+    caches
+      .keys()
+      .then((keys) => keys.forEach((k) => caches.delete(k)))
+      .catch(() => {})
+  }
 }
