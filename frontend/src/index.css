@@ -1,26 +1,34 @@
 @import "tailwindcss";
 
-/* ---- Warsha design tokens (automotive / service-manual identity) ---- */
+/* ---- GEORGE design tokens — aqua / ocean "water touch" identity (single theme) ---- */
 @theme {
-  --color-canvas: #f1f3f5;
+  --color-canvas: #eaf3fb;
   --color-surface: #ffffff;
-  --color-surface-2: #f7f8fa;
-  --color-ink: #191d21;
-  --color-muted: #5a636d;
-  --color-faint: #8a929b;
-  --color-line: #e1e5ea;
-  --color-line-strong: #cfd5db;
-  --color-accent: #e07b00;
-  --color-accent-soft: #fcebd4;
-  --color-accent-ink: #7a4300;
-  --color-petrol: #223641;
-  --color-petrol-2: #2b414d;
-  --color-petrol-ink: #eaf0f2;
-  --color-petrol-faint: #9db1bb;
-  --color-good: #2c7a54;
-  --color-bad: #b4382e;
+  --color-surface-2: #e2eef9;
+  --color-ink: #0d2438;
+  --color-muted: #506374;
+  --color-faint: #8199ac;
+  --color-line: #d3e4f1;
+  --color-line-strong: #bad4e8;
+  --color-accent: #0d84c9;
+  --color-accent-soft: #dceffb;
+  --color-accent-ink: #0a689f;
+  --color-cyan: #1cc4d8;
+  --color-petrol: #0b3f61;
+  --color-petrol-2: #0f567f;
+  --color-petrol-ink: #eaf5fc;
+  --color-petrol-faint: #9cc0d8;
+  --color-good: #10a06a;
+  --color-bad: #e05353;
+  --color-warn: #d99a1c;
 
-  --font-sans: "Cairo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: "Tajawal", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* Flowing gradients reused by the shell + showpieces */
+:root {
+  --grad-ocean: linear-gradient(135deg, #0b3f61 0%, #0f567f 45%, #14789e 100%);
+  --grad-aqua: linear-gradient(120deg, #0d84c9 0%, #1cc4d8 100%);
 }
 
 html,
@@ -37,32 +45,107 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ---- Dark theme: redefine the semantic tokens; every utility that reads a
-   --color-* var (bg-surface, text-ink, border-line, …) swaps automatically. ---- */
-:root.dark {
-  color-scheme: dark;
-  --color-canvas: #131619;
-  --color-surface: #1b1f23;
-  --color-surface-2: #21262b;
-  --color-ink: #e7eaed;
-  --color-muted: #9ba4ae;
-  --color-faint: #6b7580;
-  --color-line: #2c3238;
-  --color-line-strong: #3a424a;
-  --color-accent: #f0930f;
-  --color-accent-soft: #3a2a12;
-  --color-accent-ink: #f5a937;
-  --color-petrol: #16232c;
-  --color-petrol-2: #22333d;
-  --color-petrol-ink: #eaf0f2;
-  --color-petrol-faint: #8ba0aa;
-  --color-good: #48a778;
-  --color-bad: #d9594c;
-}
-
 /* Tabular numerals for money/counters */
 .tnum {
   font-variant-numeric: tabular-nums;
+}
+
+/* Tooltip: <button data-tip="حذف" class="tip"> — shows the label above on hover/focus */
+.tip {
+  position: relative;
+}
+.tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translate(-50%, 4px);
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--color-ink);
+  color: var(--color-surface);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease, transform 120ms ease;
+  z-index: 20;
+}
+.tip:hover::after,
+.tip:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* ---------- Water touch: flowing canvas, glass, gradients ---------- */
+
+/* Soft aqua "water mesh" background — layered radial glows that read like light on water.
+   NOTE: no `background-attachment: fixed` — on a scrolling container that forces a full
+   repaint on every scroll/DOM update and makes data loads feel janky. */
+.app-canvas {
+  background-color: var(--color-canvas);
+  background-image:
+    radial-gradient(1150px 620px at 100% -12%, rgba(28, 196, 216, 0.20), transparent 60%),
+    radial-gradient(920px 520px at -5% 4%, rgba(13, 132, 201, 0.16), transparent 55%),
+    radial-gradient(1000px 720px at 55% 118%, rgba(15, 86, 127, 0.12), transparent 60%);
+  background-repeat: no-repeat;
+}
+
+/* Frosted glass surface (moderate blur — keeps loads smooth) */
+.glass {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(10px) saturate(135%);
+  -webkit-backdrop-filter: blur(10px) saturate(135%);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 12px 34px -14px rgba(11, 63, 97, 0.28);
+}
+
+/* Soft entrance for freshly mounted content (route changes, first data) */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+.fade-in {
+  animation: fade-in 0.28s ease-out both;
+}
+
+/* While a new query is loading, keep old data on screen but gently dimmed */
+.is-stale {
+  opacity: 0.55;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+.is-fresh {
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+/* Deep, glassy ocean panel (sidebar / hero) */
+.ocean-grad {
+  background-image: var(--grad-ocean);
+}
+.aqua-grad {
+  background-image: var(--grad-aqua);
+}
+
+/* Gentle drifting motion for the aqua glow blobs */
+@keyframes aqua-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-4%, 3%, 0) scale(1.1); }
+}
+.aqua-blob {
+  animation: aqua-drift 15s ease-in-out infinite;
+}
+
+/* Slow vertical bob for wave layers */
+@keyframes wave-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.wave-bob {
+  animation: wave-bob 7s ease-in-out infinite;
 }
 
 /* Indeterminate top loading bar (shown while any request is in flight) */
@@ -84,6 +167,90 @@ body {
   border-radius: 8px;
   animation: warsha-pulse 1.3s ease-in-out infinite;
 }
+
+/* Staggered rise/fade entrance for hero content */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+.rise-in {
+  animation: rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Dropdown open — slide + fade down */
+@keyframes drop-in {
+  from { opacity: 0; transform: translateY(-10px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+.drop-in {
+  animation: drop-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: top center;
+}
+
+/* Soft breathing glow — gives the hero search a floating 3D aura */
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(0.97); }
+  50% { opacity: 0.6; transform: scale(1.03); }
+}
+.glow-pulse {
+  animation: glow-pulse 3.6s ease-in-out infinite;
+}
+
+/* Slow moving light sheen across the hero background */
+@keyframes aurora-drift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.aurora {
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.05) 45%, rgba(28, 196, 216, 0.12) 50%, rgba(255, 255, 255, 0.05) 55%, transparent 70%);
+  background-size: 220% 220%;
+  animation: aurora-drift 14s ease-in-out infinite;
+}
+
+/* Shimmering rotating gradient border for the hero search */
+@property --shimmer-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes shimmer-spin {
+  to { --shimmer-angle: 360deg; }
+}
+.shimmer-border {
+  background: conic-gradient(from var(--shimmer-angle),
+    rgba(255, 255, 255, 0.55), var(--color-cyan), rgba(255, 255, 255, 0.5),
+    var(--color-accent), rgba(255, 255, 255, 0.55), var(--color-cyan), rgba(255, 255, 255, 0.55));
+  animation: shimmer-spin 6s linear infinite;
+}
+
+/* 3D raised search box — depth shadow + bevel highlight, tilts on hover, lifts on focus */
+.hero-search-inner {
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.75),
+    0 26px 50px -12px rgba(8, 47, 73, 0.72),
+    0 12px 22px -10px rgba(0, 0, 0, 0.4);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
+  transform: perspective(1100px);
+}
+.hero-search-inner:hover {
+  transform: perspective(1100px) rotateX(7deg) translateY(-5px) scale(1.02);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.85),
+    0 40px 70px -14px rgba(8, 47, 73, 0.82),
+    0 18px 30px -10px rgba(0, 0, 0, 0.45);
+}
+.group:focus-within .hero-search-inner {
+  transform: perspective(1100px) translateY(-3px) scale(1.01);
+}
+.hero-glow {
+  background-color: color-mix(in oklab, var(--color-cyan) 40%, transparent);
+  filter: blur(28px);
+}
+.group:focus-within .hero-glow {
+  background-color: color-mix(in oklab, var(--color-cyan) 68%, transparent);
+  filter: blur(38px);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .warsha-bar, .warsha-skeleton { animation: none; }
+  .warsha-bar, .warsha-skeleton, .aqua-blob, .wave-bob, .fade-in, .rise-in, .drop-in, .glow-pulse, .aurora, .shimmer-border { animation: none; }
 }

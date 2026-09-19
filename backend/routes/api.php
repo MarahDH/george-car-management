@@ -4,13 +4,18 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BackupController;
 use App\Http\Controllers\Api\CarController;
 use App\Http\Controllers\Api\CustomerController;
+use App\Http\Controllers\Api\DailyController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DebtController;
+use App\Http\Controllers\Api\SupplierDebtController;
+use App\Http\Controllers\Api\SupplierPaymentController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PdfController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\SupplierController;
+use App\Http\Controllers\Api\WorkerController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -22,7 +27,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/health', fn () => response()->json(['status' => 'ok', 'app' => 'warsha']));
 
-Route::post('/login', [AuthController::class, 'login']);
+// Rate-limited to blunt brute-force attempts (per IP + email).
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
@@ -30,15 +36,33 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/settings', [SettingController::class, 'index']);
     Route::put('/settings', [SettingController::class, 'update']);
 
+    // Dashboard — one call returns all landing-page data (KPIs + work boards)
+    Route::get('/dashboard', [DashboardController::class, 'index']);
+
     // Customers + cars (Phase 1)
     Route::get('/customers', [CustomerController::class, 'index']);
     Route::post('/customers', [CustomerController::class, 'store']);
     Route::get('/customers/{customer}', [CustomerController::class, 'show']);
     Route::put('/customers/{customer}', [CustomerController::class, 'update']);
     Route::delete('/customers/{customer}', [CustomerController::class, 'destroy']);
+    Route::post('/customers/{customer}/archive', [CustomerController::class, 'archive']);
+    Route::post('/customers/{customer}/unarchive', [CustomerController::class, 'unarchive']);
     Route::post('/customers/{customer}/cars', [CarController::class, 'store']);
     Route::put('/cars/{car}', [CarController::class, 'update']);
     Route::delete('/cars/{car}', [CarController::class, 'destroy']);
+
+    // Daily movement (الحركة اليومية)
+    Route::get('/daily', [DailyController::class, 'index']);
+
+    // Workers (العمّال) — managed list of technicians
+    Route::get('/workers', [WorkerController::class, 'index']);
+    Route::post('/workers', [WorkerController::class, 'store']);
+    Route::put('/workers/{worker}', [WorkerController::class, 'update']);
+    Route::delete('/workers/{worker}', [WorkerController::class, 'destroy']);
+
+    // Supplier debts (الديون لكل تجار السوق) + payments to suppliers
+    Route::get('/supplier-debts', [SupplierDebtController::class, 'index']);
+    Route::post('/supplier-payments', [SupplierPaymentController::class, 'store']);
 
     // Suppliers (Phase 4)
     Route::get('/suppliers', [SupplierController::class, 'index']);

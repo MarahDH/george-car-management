@@ -7,13 +7,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PartItem extends Model
 {
-    protected $fillable = ['invoice_id', 'supplier_id', 'name', 'buy_price', 'sell_price', 'quantity'];
+    protected $fillable = ['invoice_id', 'supplier_id', 'worker_id', 'name', 'buy_price', 'sell_price', 'price_usd', 'quantity'];
 
     protected function casts(): array
     {
         return [
             'buy_price' => 'decimal:2',
             'sell_price' => 'decimal:2',
+            'price_usd' => 'decimal:2',
             'quantity' => 'integer',
         ];
     }
@@ -28,5 +29,11 @@ class PartItem extends Model
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);
+    }
+
+    /** @return BelongsTo<Worker, $this> */
+    public function worker(): BelongsTo
+    {
+        return $this->belongsTo(Worker::class);
     }
 }

@@ -2,10 +2,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useCustomers, useCustomer } from '../lib/customers'
 import { useSuppliers } from '../lib/suppliers'
+import { useWorkers } from '../lib/workers'
+import { useCurrency } from '../lib/currency'
 import { useCreateInvoice, useInvoice, useUpdateInvoice, type InvoiceInput } from '../lib/invoices'
 import { useDebouncedValue } from '../lib/useDebouncedValue'
 import { useMoney } from '../lib/useMoney'
 import { extractErrors, inputClass } from '../lib/formError'
+import { sanitizeNumberInput } from '../lib/format'
 import { DEPARTMENTS, METHODS, STATUS_ORDER, STATUSES } from '../lib/labels'
 import Select from '../components/Select'
 import { useToast } from '../components/Toast'
@@ -13,8 +16,8 @@ import Breadcrumbs from '../components/Breadcrumbs'
 import CustomerFormModal from '../components/CustomerFormModal'
 import type { Car, Department, InvoiceStatus, PayMethod } from '../types'
 
-interface LaborRow { key: number; department: Department; description: string; amount: string }
-interface PartRow { key: number; supplier_id: string; name: string; buy_price: string; sell_price: string; quantity: string }
+interface LaborRow { key: number; department: Department; worker_id: string; description: string; amount: string }
+interface PartRow { key: number; supplier_id: string; worker_id: string; name: string; buy_price: string; sell_price: string; price_usd: string; quantity: string }
 
 let uid = 1
 const nextKey = () => uid++
@@ -32,6 +35,8 @@ export default function InvoiceFormPage() {
   const money = useMoney()
 
   const { data: suppliers } = useSuppliers('')
+  const { data: workers } = useWorkers()
+  const currency = useCurrency()
   const existing = useInvoice(editId ?? NaN)
   const create = useCreateInvoice()
   const update = useUpdateInvoice(editId ?? 0)
@@ -48,10 +53,10 @@ export default function InvoiceFormPage() {
   const cars: Car[] = picked?.customer.cars ?? []
 
   const today = new Date().toISOString().slice(0, 10)
-  const [date, setDate] = useState(today)
+  const [date, setDate] = useState(searchParams.get('date') || today)
   const [odometer, setOdometer] = useState('')
   const [status, setStatus] = useState<InvoiceStatus>('inspecting')
-  const [labor, setLabor] = useState<LaborRow[]>([{ key: nextKey(), department: 'mechanic', description: '', amount: '' }])
+  const [labor, setLabor] = useState<LaborRow[]>([{ key: nextKey(), department: 'mechanic', worker_id: '', description: '', amount: '' }])
   const [parts, setParts] = useState<PartRow[]>([])
   const [paid, setPaid] = useState('')
   const [method, setMethod] = useState<PayMethod>('cash')
@@ -71,8 +76,8 @@ export default function InvoiceFormPage() {
     setPaid(String(inv.paid_amount))
     setMethod(inv.payment_method ?? 'cash')
     setNotes(inv.notes ?? '')
-    setLabor((inv.labor_items ?? []).map((l) => ({ key: nextKey(), department: l.department, description: l.description ?? '', amount: String(l.amount) })))
-    setParts((inv.part_items ?? []).map((p) => ({ key: nextKey(), supplier_id: p.supplier_id ? String(p.supplier_id) : '', name: p.name, buy_price: String(p.buy_price), sell_price: String(p.sell_price), quantity: String(p.quantity) })))
+    setLabor((inv.labor_items ?? []).map((l) => ({ key: nextKey(), department: l.department, worker_id: l.worker_id ? String(l.worker_id) : '', description: l.description ?? '', amount: String(l.amount) })))
+    setParts((inv.part_items ?? []).map((p) => ({ key: nextKey(), supplier_id: p.supplier_id ? String(p.supplier_id) : '', worker_id: p.worker_id ? String(p.worker_id) : '', name: p.name, buy_price: String(p.buy_price), sell_price: String(p.sell_price), price_usd: p.price_usd != null ? String(p.price_usd) : '', quantity: String(p.quantity) })))
   }, [isEdit, existing.data])
 
   const totals = useMemo(() => {
@@ -85,6 +90,7 @@ export default function InvoiceFormPage() {
 
   const carOptions = cars.map((c) => ({ value: String(c.id), label: `${c.plate_number}${c.type ? ` — ${c.type}` : ''}` }))
   const supplierOptions = [{ value: '', label: 'بدون مورد' }, ...(suppliers?.data ?? []).map((s) => ({ value: String(s.id), label: s.name }))]
+  const workerOptions = [{ value: '', label: 'بدون عامل' }, ...(workers ?? []).map((w) => ({ value: String(w.id), label: w.name }))]
 
   async function handleSubmit() {
     setErrors({})
@@ -102,8 +108,8 @@ export default function InvoiceFormPage() {
       paid_amount: Number(paid) || 0,
       payment_method: method,
       notes: notes || null,
-      labor_items: labor.filter((r) => r.amount !== '').map((r) => ({ department: r.department, description: r.description || null, amount: Number(r.amount) })),
-      part_items: parts.filter((r) => r.name.trim() !== '').map((r) => ({ supplier_id: r.supplier_id ? Number(r.supplier_id) : null, name: r.name, buy_price: Number(r.buy_price) || 0, sell_price: Number(r.sell_price) || 0, quantity: Number(r.quantity) || 1 })),
+      labor_items: labor.filter((r) => r.amount !== '').map((r) => ({ department: r.department, worker_id: r.worker_id ? Number(r.worker_id) : null, description: r.description || null, amount: Number(r.amount) })),
+      part_items: parts.filter((r) => r.name.trim() !== '').map((r) => ({ supplier_id: r.supplier_id ? Number(r.supplier_id) : null, worker_id: r.worker_id ? Number(r.worker_id) : null, name: r.name, buy_price: Number(r.buy_price) || 0, sell_price: Number(r.sell_price) || 0, price_usd: r.price_usd ? Number(r.price_usd) : null, quantity: Number(r.quantity) || 1 })),
     }
     try {
       const saved = isEdit ? await update.mutateAsync(input) : await create.mutateAsync(input)
@@ -145,7 +151,7 @@ export default function InvoiceFormPage() {
         <label className="block"><span className="mb-1 block text-xs font-medium text-muted">التاريخ</span>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClass} /></label>
         <label className="block"><span className="mb-1 block text-xs font-medium text-muted">العداد (كم)</span>
-          <input value={odometer} onChange={(e) => setOdometer(e.target.value)} inputMode="numeric" dir="ltr" className={`${inputClass} text-right`} /></label>
+          <input value={odometer} onChange={(e) => setOdometer(sanitizeNumberInput(e.target.value))} inputMode="numeric" dir="ltr" className={`${inputClass} text-right`} /></label>
         <div className="col-span-2"><span className="mb-1 block text-xs font-medium text-muted">الحالة</span>
           <Select value={status} onChange={(v) => setStatus(v as InvoiceStatus)} options={statusOptions} ariaLabel="الحالة" /></div>
       </section>
@@ -153,14 +159,15 @@ export default function InvoiceFormPage() {
       <section className="rounded-2xl border border-line bg-surface p-5">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-bold text-ink">أجور اليد</h2>
-          <button type="button" onClick={() => setLabor((r) => [...r, { key: nextKey(), department: 'mechanic', description: '', amount: '' }])} className="rounded-lg bg-accent-soft px-3 py-1.5 text-sm font-semibold text-accent-ink">＋ سطر</button>
+          <button type="button" onClick={() => setLabor((r) => [...r, { key: nextKey(), department: 'mechanic', worker_id: '', description: '', amount: '' }])} className="rounded-lg bg-accent-soft px-3 py-1.5 text-sm font-semibold text-accent-ink">＋ سطر</button>
         </div>
         <div className="space-y-2">
           {labor.map((row, i) => (
             <div key={row.key} className="grid grid-cols-12 items-start gap-2">
               <div className="col-span-3"><Select value={row.department} onChange={(v) => setLabor((rs) => rs.map((r, j) => j === i ? { ...r, department: v as Department } : r))} options={departmentOptions} ariaLabel="القسم" /></div>
-              <input placeholder="الوصف" value={row.description} onChange={(e) => setLabor((rs) => rs.map((r, j) => j === i ? { ...r, description: e.target.value } : r))} className={`${inputClass} col-span-6`} />
-              <input placeholder="المبلغ" value={row.amount} onChange={(e) => setLabor((rs) => rs.map((r, j) => j === i ? { ...r, amount: e.target.value } : r))} inputMode="numeric" dir="ltr" className={`${inputClass} col-span-2 text-right`} />
+              <div className="col-span-3"><Select value={row.worker_id} onChange={(v) => setLabor((rs) => rs.map((r, j) => j === i ? { ...r, worker_id: v } : r))} placeholder="العامل…" options={workerOptions} ariaLabel="العامل" /></div>
+              <input placeholder="الوصف" value={row.description} onChange={(e) => setLabor((rs) => rs.map((r, j) => j === i ? { ...r, description: e.target.value } : r))} className={`${inputClass} col-span-3`} />
+              <input placeholder="المبلغ" value={row.amount} onChange={(e) => setLabor((rs) => rs.map((r, j) => j === i ? { ...r, amount: sanitizeNumberInput(e.target.value, { decimal: true }) } : r))} inputMode="numeric" dir="ltr" className={`${inputClass} col-span-2 text-right`} />
               <button type="button" onClick={() => setLabor((rs) => rs.filter((_, j) => j !== i))} className="col-span-1 self-center text-muted hover:text-bad">✕</button>
             </div>
           ))}
@@ -171,16 +178,30 @@ export default function InvoiceFormPage() {
       <section className="rounded-2xl border border-line bg-surface p-5">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-bold text-ink">قطع الغيار</h2>
-          <button type="button" onClick={() => setParts((r) => [...r, { key: nextKey(), supplier_id: '', name: '', buy_price: '', sell_price: '', quantity: '1' }])} className="rounded-lg bg-accent-soft px-3 py-1.5 text-sm font-semibold text-accent-ink">＋ قطعة</button>
+          <button type="button" onClick={() => setParts((r) => [...r, { key: nextKey(), supplier_id: '', worker_id: '', name: '', buy_price: '', sell_price: '', price_usd: '', quantity: '1' }])} className="rounded-lg bg-accent-soft px-3 py-1.5 text-sm font-semibold text-accent-ink">＋ قطعة</button>
         </div>
+        {parts.length > 0 && (
+          <div className="mb-1 grid grid-cols-12 gap-2 px-1 text-[11px] font-medium text-faint">
+            <span className="col-span-2">اسم القطعة</span>
+            <span className="col-span-2">العامل</span>
+            <span className="col-span-2">المصدر</span>
+            <span className="col-span-1 text-right">شراء</span>
+            <span className="col-span-2 text-right">سوري (ل.س)</span>
+            <span className="col-span-1 text-right">دولار</span>
+            <span className="col-span-1 text-right">عدد</span>
+            <span className="col-span-1" />
+          </div>
+        )}
         <div className="space-y-2">
           {parts.map((row, i) => (
             <div key={row.key} className="grid grid-cols-12 items-start gap-2">
-              <input placeholder="اسم القطعة" value={row.name} onChange={(e) => setParts((rs) => rs.map((r, j) => j === i ? { ...r, name: e.target.value } : r))} className={`${inputClass} col-span-3`} />
-              <div className="col-span-3"><Select value={row.supplier_id} onChange={(v) => setParts((rs) => rs.map((r, j) => j === i ? { ...r, supplier_id: v } : r))} placeholder="المورد…" options={supplierOptions} ariaLabel="المورد" /></div>
-              <input placeholder="شراء" value={row.buy_price} onChange={(e) => setParts((rs) => rs.map((r, j) => j === i ? { ...r, buy_price: e.target.value } : r))} inputMode="numeric" dir="ltr" className={`${inputClass} col-span-2 text-right`} />
-              <input placeholder="بيع" value={row.sell_price} onChange={(e) => setParts((rs) => rs.map((r, j) => j === i ? { ...r, sell_price: e.target.value } : r))} inputMode="numeric" dir="ltr" className={`${inputClass} col-span-2 text-right`} />
-              <input placeholder="عدد" value={row.quantity} onChange={(e) => setParts((rs) => rs.map((r, j) => j === i ? { ...r, quantity: e.target.value } : r))} inputMode="numeric" dir="ltr" className={`${inputClass} col-span-1 text-right`} />
+              <input placeholder="اسم القطعة" value={row.name} onChange={(e) => setParts((rs) => rs.map((r, j) => j === i ? { ...r, name: e.target.value } : r))} className={`${inputClass} col-span-2`} />
+              <div className="col-span-2"><Select value={row.worker_id} onChange={(v) => setParts((rs) => rs.map((r, j) => j === i ? { ...r, worker_id: v } : r))} placeholder="العامل…" options={workerOptions} ariaLabel="العامل" /></div>
+              <div className="col-span-2"><Select value={row.supplier_id} onChange={(v) => setParts((rs) => rs.map((r, j) => j === i ? { ...r, supplier_id: v } : r))} placeholder="المصدر…" options={supplierOptions} ariaLabel="المصدر" /></div>
+              <input placeholder="شراء" value={row.buy_price} onChange={(e) => setParts((rs) => rs.map((r, j) => j === i ? { ...r, buy_price: sanitizeNumberInput(e.target.value, { decimal: true }) } : r))} inputMode="numeric" dir="ltr" className={`${inputClass} col-span-1 text-right`} />
+              <input placeholder="سوري" value={row.sell_price} onChange={(e) => { const v = sanitizeNumberInput(e.target.value, { decimal: true }); setParts((rs) => rs.map((r, j) => j === i ? { ...r, sell_price: v, price_usd: currency.hasRate && v !== '' && !Number.isNaN(Number(v)) ? String(currency.toUsd(Number(v))) : r.price_usd } : r)) }} inputMode="numeric" dir="ltr" className={`${inputClass} col-span-2 text-right`} />
+              <input placeholder="دولار" value={row.price_usd} onChange={(e) => { const v = sanitizeNumberInput(e.target.value, { decimal: true }); setParts((rs) => rs.map((r, j) => j === i ? { ...r, price_usd: v, sell_price: currency.hasRate && v !== '' && !Number.isNaN(Number(v)) ? String(currency.toSyp(Number(v))) : r.sell_price } : r)) }} inputMode="numeric" dir="ltr" className={`${inputClass} col-span-1 text-right`} />
+              <input placeholder="عدد" value={row.quantity} onChange={(e) => setParts((rs) => rs.map((r, j) => j === i ? { ...r, quantity: sanitizeNumberInput(e.target.value) } : r))} inputMode="numeric" dir="ltr" className={`${inputClass} col-span-1 text-right`} />
               <button type="button" onClick={() => setParts((rs) => rs.filter((_, j) => j !== i))} className="col-span-1 self-center text-muted hover:text-bad">✕</button>
             </div>
           ))}
@@ -191,7 +212,7 @@ export default function InvoiceFormPage() {
       <section className="grid gap-4 rounded-2xl border border-line bg-surface p-5 md:grid-cols-2">
         <div className="space-y-3">
           <label className="block"><span className="mb-1 block text-xs font-medium text-muted">المدفوع</span>
-            <input value={paid} onChange={(e) => setPaid(e.target.value)} inputMode="numeric" dir="ltr" className={`${inputClass} text-right`} /></label>
+            <input value={paid} onChange={(e) => setPaid(sanitizeNumberInput(e.target.value, { decimal: true }))} inputMode="numeric" dir="ltr" className={`${inputClass} text-right`} /></label>
           <div><span className="mb-1 block text-xs font-medium text-muted">طريقة الدفع</span>
             <Select value={method} onChange={(v) => setMethod(v as PayMethod)} options={methodOptions} ariaLabel="طريقة الدفع" /></div>
           <label className="block"><span className="mb-1 block text-xs font-medium text-muted">ملاحظات</span>
@@ -202,6 +223,12 @@ export default function InvoiceFormPage() {
           <Row label="إجمالي القطع" value={money(totals.partsTotal)} />
           <div className="my-1 border-t border-line" />
           <Row label="الإجمالي" value={money(totals.total)} strong />
+          {currency.hasRate && (
+            <div className="flex items-center justify-between text-xs text-muted">
+              <span>≈ بالدولار</span>
+              <span className="tnum">{currency.usd(currency.toUsd(totals.total))}</span>
+            </div>
+          )}
           <Row label="المدفوع" value={money(Number(paid) || 0)} />
           <Row label="المتبقي (دين)" value={money(totals.remaining)} danger />
           <div className="my-1 border-t border-line" />

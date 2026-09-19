@@ -8,12 +8,24 @@ export const api = axios.create({
 })
 
 export function getToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY)
+  // A "remember me" token lives in localStorage; a session token in sessionStorage
+  // (cleared when the browser/tab closes) — important on shared workshop PCs.
+  try {
+    return sessionStorage.getItem(TOKEN_KEY) ?? localStorage.getItem(TOKEN_KEY)
+  } catch {
+    return null
+  }
 }
 
-export function setToken(token: string | null): void {
-  if (token) localStorage.setItem(TOKEN_KEY, token)
-  else localStorage.removeItem(TOKEN_KEY)
+export function setToken(token: string | null, remember = false): void {
+  try {
+    // Always clear both first so a token never lingers in the other store.
+    localStorage.removeItem(TOKEN_KEY)
+    sessionStorage.removeItem(TOKEN_KEY)
+    if (token) (remember ? localStorage : sessionStorage).setItem(TOKEN_KEY, token)
+  } catch {
+    // storage unavailable (private mode / blocked) — nothing to persist
+  }
 }
 
 // Attach the bearer token to every request.

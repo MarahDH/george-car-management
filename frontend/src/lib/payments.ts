@@ -34,6 +34,7 @@ export function useCreatePayment() {
       qc.invalidateQueries({ queryKey: ['debts'] })
       qc.invalidateQueries({ queryKey: ['customer'] })
       qc.invalidateQueries({ queryKey: ['report'] })
+      qc.invalidateQueries({ queryKey: ['dashboard'] })
     },
   })
 }

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from './api'
-import type { Paginated, Supplier, SupplierStatementLine } from '../types'
+import type { Paginated, Supplier, SupplierPaymentRow, SupplierStatementLine } from '../types'
 
 export interface SupplierInput {
   name: string
@@ -12,6 +12,8 @@ export interface SupplierProfile {
   data: Supplier
   statement: SupplierStatementLine[]
   total_bought: number
+  debt: { purchases: number; paid: number; debt: number }
+  payments: SupplierPaymentRow[]
 }
 
 export function useSuppliers(q: string) {

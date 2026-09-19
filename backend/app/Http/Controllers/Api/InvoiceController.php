@@ -7,6 +7,7 @@ use App\Http\Requests\StoreInvoiceRequest;
 use App\Http\Requests\UpdateInvoiceRequest;
 use App\Http\Requests\UpdateInvoiceStatusRequest;
 use App\Http\Resources\InvoiceResource;
+use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Setting;
 use App\Services\DocumentNumber;
@@ -68,18 +69,21 @@ class InvoiceController extends Controller
 
             $this->syncItems($invoice, $data);
 
+            // A new visit means the customer is back — take them out of the archive.
+            Customer::whereKey($data['customer_id'])->archived()->update(['archived_at' => null]);
+
             return $invoice;
         });
 
         return new InvoiceResource(
-            $invoice->load(['customer', 'car', 'laborItems', 'partItems.supplier'])
+            $invoice->load(['customer', 'car', 'laborItems.worker', 'partItems.supplier', 'partItems.worker'])
         );
     }
 
     public function show(Invoice $invoice): InvoiceResource
     {
         return new InvoiceResource(
-            $invoice->load(['customer', 'car', 'laborItems', 'partItems.supplier'])
+            $invoice->load(['customer', 'car', 'laborItems.worker', 'partItems.supplier', 'partItems.worker'])
         );
     }
 
@@ -106,7 +110,7 @@ class InvoiceController extends Controller
         });
 
         return new InvoiceResource(
-            $invoice->load(['customer', 'car', 'laborItems', 'partItems.supplier'])
+            $invoice->load(['customer', 'car', 'laborItems.worker', 'partItems.supplier', 'partItems.worker'])
         );
     }
 
@@ -133,6 +137,7 @@ class InvoiceController extends Controller
     {
         foreach ($data['labor_items'] ?? [] as $item) {
             $invoice->laborItems()->create([
+                'worker_id' => $item['worker_id'] ?? null,
                 'department' => $item['department'],
                 'description' => $item['description'] ?? null,
                 'amount' => $item['amount'],
@@ -142,9 +147,11 @@ class InvoiceController extends Controller
         foreach ($data['part_items'] ?? [] as $item) {
             $invoice->partItems()->create([
                 'supplier_id' => $item['supplier_id'] ?? null,
+                'worker_id' => $item['worker_id'] ?? null,
                 'name' => $item['name'],
                 'buy_price' => $item['buy_price'],
                 'sell_price' => $item['sell_price'],
+                'price_usd' => $item['price_usd'] ?? null,
                 'quantity' => $item['quantity'],
             ]);
         }

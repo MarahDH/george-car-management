@@ -1,15 +1,39 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from './api'
 import type { CarInput, Customer, CustomerInput, CustomerProfile, Paginated } from '../types'
 
-/** List / search customers (by name, phone, or car plate). */
+/**
+ * List / search customers (by name, phone, or car plate) — first page only.
+ * Includes archived customers so a returning customer can still be picked for a new invoice.
+ */
 export function useCustomers(q: string) {
   return useQuery({
     queryKey: ['customers', q],
     queryFn: async (): Promise<Paginated<Customer>> => {
-      const res = await api.get('/customers', { params: q ? { q } : {} })
+      const res = await api.get('/customers', { params: { ...(q ? { q } : {}), status: 'all' } })
       return res.data as Paginated<Customer>
     },
+  })
+}
+
+/**
+ * Paged customer list that loads more on demand — scales to hundreds of records
+ * without dumping them all at once. Used by the العملاء page's infinite-scroll list.
+ */
+export type CustomerSort = 'name' | 'phone' | 'cars' | 'debt' | 'last_visit' | 'archived_at'
+/** active = still coming (default), archived = stopped coming, all = both. */
+export type CustomerStatus = 'active' | 'archived' | 'all'
+
+export function useInfiniteCustomers(q: string, sort: CustomerSort = 'name', dir: 'asc' | 'desc' = 'asc', status: CustomerStatus = 'active') {
+  return useInfiniteQuery({
+    queryKey: ['customers-infinite', q, sort, dir, status],
+    queryFn: async ({ pageParam }): Promise<Paginated<Customer>> => {
+      const res = await api.get('/customers', { params: { ...(q ? { q } : {}), sort, dir, status, page: pageParam } })
+      return res.data as Paginated<Customer>
+    },
+    initialPageParam: 1,
+    getNextPageParam: (last) =>
+      last.meta.current_page < last.meta.last_page ? last.meta.current_page + 1 : undefined,
   })
 }
 
@@ -50,6 +74,22 @@ export function useUpdateCustomer(id: number) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['customers'] })
+      qc.invalidateQueries({ queryKey: ['customer', id] })
+    },
+  })
+}
+
+/** Archive (stopped coming) or restore a customer; both refresh the lists and the profile. */
+export function useSetCustomerArchived() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, archived }: { id: number; archived: boolean }): Promise<Customer> => {
+      const res = await api.post(`/customers/${id}/${archived ? 'archive' : 'unarchive'}`)
+      return res.data.data as Customer
+    },
+    onSuccess: (_, { id }) => {
+      qc.invalidateQueries({ queryKey: ['customers'] })
+      qc.invalidateQueries({ queryKey: ['customers-infinite'] })
       qc.invalidateQueries({ queryKey: ['customer', id] })
     },
   })

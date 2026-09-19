@@ -3,6 +3,7 @@ import Modal from './Modal'
 import { useToast } from './Toast'
 import { useCreateCar, useUpdateCar } from '../lib/customers'
 import { extractErrors, inputClass } from '../lib/formError'
+import { sanitizeNumberInput } from '../lib/format'
 import type { Car } from '../types'
 
 interface Props {
@@ -86,7 +87,7 @@ export default function CarFormModal({ open, onClose, customerId, car }: Props) 
             <span className="mb-1 block text-sm font-medium text-muted">سنة الصنع</span>
             <input
               value={year}
-              onChange={(e) => setYear(e.target.value)}
+              onChange={(e) => setYear(sanitizeNumberInput(e.target.value))}
               inputMode="numeric"
               dir="ltr"
               placeholder="2018"

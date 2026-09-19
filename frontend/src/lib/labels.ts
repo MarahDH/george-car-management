@@ -8,7 +8,7 @@ export const DEPARTMENTS: Record<Department, string> = {
 
 export const STATUSES: Record<InvoiceStatus, string> = {
   inspecting: 'قيد الفحص',
-  repairing: 'قيد الإصلاح',
+  repairing: 'قيد التصليح',
   ready: 'جاهزة للتسليم',
 }
 

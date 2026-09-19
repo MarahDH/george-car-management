@@ -18,6 +18,8 @@ class LaborItemResource extends JsonResource
         return [
             'id' => $this->id,
             'department' => $this->department,
+            'worker_id' => $this->worker_id,
+            'worker_name' => $this->whenLoaded('worker', fn () => $this->worker?->name),
             'description' => $this->description,
             'amount' => (float) $this->amount,
         ];

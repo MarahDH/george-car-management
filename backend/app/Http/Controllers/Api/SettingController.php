@@ -29,6 +29,9 @@ class SettingController extends Controller
             'currency' => ['nullable', 'string', 'max:16'],
             'currency_symbol' => ['nullable', 'string', 'max:16'],
             'invoice_number_format' => ['nullable', 'string', 'max:64'],
+            // Dual currency: how many SYP one USD is worth, and the USD display symbol.
+            'usd_rate' => ['nullable', 'numeric', 'min:0'],
+            'usd_symbol' => ['nullable', 'string', 'max:16'],
         ]);
 
         foreach ($data as $key => $value) {

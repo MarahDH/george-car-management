@@ -56,10 +56,32 @@ class SupplierController extends Controller
                 'customer_name' => $part->invoice?->customer?->name,
             ]);
 
+        $payments = $supplier->payments()
+            ->orderByDesc('date')
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn ($p) => [
+                'id' => $p->id,
+                'receipt_number' => $p->receipt_number,
+                'amount' => (float) $p->amount,
+                'method' => $p->method,
+                'date' => $p->date?->toDateString(),
+                'note' => $p->note,
+            ]);
+
+        $purchases = $supplier->totalPurchases();
+        $paid = $supplier->totalPaid();
+
         return response()->json([
             'data' => (new SupplierResource($supplier))->resolve(),
             'statement' => $lines,
             'total_bought' => round((float) $lines->sum('line_cost'), 2),
+            'debt' => [
+                'purchases' => $purchases,
+                'paid' => $paid,
+                'debt' => round($purchases - $paid, 2),
+            ],
+            'payments' => $payments,
         ]);
     }
 

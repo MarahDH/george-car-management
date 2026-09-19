@@ -9,7 +9,7 @@ class LaborItem extends Model
 {
     public const DEPARTMENTS = ['mechanic', 'electrical', 'dozan'];
 
-    protected $fillable = ['invoice_id', 'department', 'description', 'amount'];
+    protected $fillable = ['invoice_id', 'worker_id', 'department', 'description', 'amount'];
 
     protected function casts(): array
     {
@@ -20,5 +20,11 @@ class LaborItem extends Model
     public function invoice(): BelongsTo
     {
         return $this->belongsTo(Invoice::class);
+    }
+
+    /** @return BelongsTo<Worker, $this> */
+    public function worker(): BelongsTo
+    {
+        return $this->belongsTo(Worker::class);
     }
 }

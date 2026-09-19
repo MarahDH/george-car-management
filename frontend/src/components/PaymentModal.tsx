@@ -4,6 +4,7 @@ import Select from './Select'
 import { useToast } from './Toast'
 import { useCreatePayment } from '../lib/payments'
 import { extractErrors, inputClass } from '../lib/formError'
+import { sanitizeNumberInput } from '../lib/format'
 import { openPdf } from '../lib/download'
 import { METHODS } from '../lib/labels'
 import type { PayMethod } from '../types'
@@ -60,7 +61,7 @@ export default function PaymentModal({ open, onClose, customerId, customerName }
           <input
             autoFocus
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={(e) => setAmount(sanitizeNumberInput(e.target.value, { decimal: true }))}
             inputMode="numeric"
             dir="ltr"
             className={`${inputClass} text-right`}

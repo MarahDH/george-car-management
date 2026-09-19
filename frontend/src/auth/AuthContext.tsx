@@ -11,7 +11,7 @@ import type { User } from '../types'
 interface AuthState {
   user: User | null
   loading: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (email: string, password: string, remember?: boolean) => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -35,9 +35,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false))
   }, [])
 
-  async function login(email: string, password: string) {
-    const res = await api.post('/login', { email, password, device_name: 'web' })
-    setToken(res.data.token)
+  async function login(email: string, password: string, remember = false) {
+    const res = await api.post('/login', { email, password, device_name: 'web', remember })
+    setToken(res.data.token, remember)
     setUser(res.data.user)
   }
 

@@ -11,12 +11,14 @@ export interface InvoiceInput {
   paid_amount?: number
   payment_method?: PayMethod | null
   notes?: string | null
-  labor_items: { department: Department; description?: string | null; amount: number }[]
+  labor_items: { department: Department; worker_id?: number | null; description?: string | null; amount: number }[]
   part_items: {
     supplier_id?: number | null
+    worker_id?: number | null
     name: string
     buy_price: number
     sell_price: number
+    price_usd?: number | null
     quantity: number
   }[]
 }
@@ -47,6 +49,7 @@ function invalidateAll(qc: ReturnType<typeof useQueryClient>) {
   qc.invalidateQueries({ queryKey: ['debts'] })
   qc.invalidateQueries({ queryKey: ['report'] })
   qc.invalidateQueries({ queryKey: ['customer'] })
+  qc.invalidateQueries({ queryKey: ['dashboard'] })
 }
 
 export function useCreateInvoice() {
@@ -83,6 +86,7 @@ export function useUpdateInvoiceStatus() {
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ['invoices'] })
       qc.invalidateQueries({ queryKey: ['invoice', vars.id] })
+      qc.invalidateQueries({ queryKey: ['dashboard'] })
     },
   })
 }

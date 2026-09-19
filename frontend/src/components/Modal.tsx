@@ -1,8 +1,9 @@
 import { useEffect, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 
 interface ModalProps {
   open: boolean
-  title: string
+  title: ReactNode
   onClose: () => void
   children: ReactNode
 }
@@ -19,8 +20,9 @@ export default function Modal({ open, title, onClose, children }: ModalProps) {
 
   if (!open) return null
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 pt-16">
+  // Portal to <body> so ancestor transforms/filters (e.g. the page fade-in) can't trap the overlay
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4" onClick={onClose}>
       <div
         className="w-full max-w-lg rounded-2xl bg-surface shadow-2xl"
         role="dialog"
@@ -40,6 +42,7 @@ export default function Modal({ open, title, onClose, children }: ModalProps) {
         </div>
         <div className="p-5">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

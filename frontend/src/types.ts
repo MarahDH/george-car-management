@@ -28,8 +28,12 @@ export interface Customer {
   country_code: string | null
   whatsapp_number: string | null
   notes: string | null
+  archived_at?: string | null
+  is_archived?: boolean
   cars_count?: number
   cars?: Car[]
+  debt?: number | null
+  last_visit?: string | null
   created_at?: string
 }
 
@@ -69,6 +73,8 @@ export type PayMethod = 'cash' | 'network'
 export interface LaborItem {
   id?: number
   department: Department
+  worker_id?: number | null
+  worker_name?: string | null
   description?: string | null
   amount: number
 }
@@ -77,9 +83,12 @@ export interface PartItem {
   id?: number
   supplier_id?: number | null
   supplier_name?: string | null
+  worker_id?: number | null
+  worker_name?: string | null
   name: string
   buy_price: number
   sell_price: number
+  price_usd?: number | null
   quantity: number
   line_total?: number
 }
@@ -121,6 +130,12 @@ export interface Invoice {
   car?: InvoiceCarRef
   labor_items?: LaborItem[]
   part_items?: PartItem[]
+}
+
+export interface Worker {
+  id: number
+  name: string
+  is_active: boolean
 }
 
 export interface Supplier {
@@ -168,6 +183,12 @@ export interface CustomerProfile {
   invoices: Invoice[]
 }
 
+export interface DashboardData {
+  summary: { collected: number; open_count: number; total_debt: number }
+  in_progress: Invoice[]
+  ready: Invoice[]
+}
+
 export interface ReportSummary {
   range: { from: string; to: string }
   summary: {
@@ -185,4 +206,38 @@ export interface Backup {
   name: string
   size: number
   created_at: string
+}
+
+export interface SupplierDebtRow {
+  id: number
+  name: string
+  phone: string | null
+  purchases: number
+  paid: number
+  debt: number
+}
+
+export interface SupplierPaymentRow {
+  id: number
+  receipt_number: string | null
+  amount: number
+  method: PayMethod
+  date: string | null
+  note: string | null
+}
+
+export interface DailySummary {
+  count: number
+  total: number
+  collected: number
+  remaining: number
+  parts_cost: number
+}
+
+export interface DailyResponse {
+  date: string
+  from?: string
+  to?: string
+  invoices: Invoice[]
+  summary: DailySummary
 }

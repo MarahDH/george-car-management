@@ -34,14 +34,17 @@ class StoreInvoiceRequest extends FormRequest
 
             'labor_items' => ['array'],
             'labor_items.*.department' => ['required', Rule::in(LaborItem::DEPARTMENTS)],
+            'labor_items.*.worker_id' => ['nullable', 'exists:workers,id'],
             'labor_items.*.description' => ['nullable', 'string', 'max:255'],
             'labor_items.*.amount' => ['required', 'numeric', 'min:0'],
 
             'part_items' => ['array'],
             'part_items.*.supplier_id' => ['nullable', 'exists:suppliers,id'],
+            'part_items.*.worker_id' => ['nullable', 'exists:workers,id'],
             'part_items.*.name' => ['required', 'string', 'max:255'],
             'part_items.*.buy_price' => ['required', 'numeric', 'min:0'],
             'part_items.*.sell_price' => ['required', 'numeric', 'min:0'],
+            'part_items.*.price_usd' => ['nullable', 'numeric', 'min:0'],
             'part_items.*.quantity' => ['required', 'integer', 'min:1'],
         ];
     }
